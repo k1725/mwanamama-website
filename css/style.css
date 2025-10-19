@@ -26,31 +26,27 @@ body {
     transition: all 0.3s ease;
 }
 
-/* Add this new rule to the CSS block */
 .logo-img {
-    height: 40px; /* Adjust height as needed */
+    height: 40px; 
     width: auto;
     transition: transform 0.3s ease;
 }
 
-/* Optional: Slightly larger text for the brand when logo is present */
 .navbar-brand {
     font-weight: 700;
-    font-size: 1.65rem; /* Increased size */
+    font-size: 1.65rem; 
     color: var(--royal-blue) !important;
 }
 
-/* Ensure the navbar links have space for the icon */
 .navbar-nav .nav-link {
-    display: flex; /* Make the link a flex container */
-    align-items: center; /* Vertically align icon and text */
+    display: flex; 
+    align-items: center; 
     color: var(--dark-text);
     font-weight: 500;
     padding: 0.5rem 1rem;
     transition: color 0.3s ease;
 }
 
-/* Style the icon for better visual presence */
 .navbar-nav .nav-link i {
     font-size: 1.1rem;
 }
@@ -64,7 +60,8 @@ body {
 .hero {
     background: linear-gradient(135deg, var(--royal-blue) 0%, #2a5bc9 100%);
     color: white;
-    padding: 120px 0 80px;
+    /* Base padding for desktop: 120px top, 80px bottom */
+    padding: 120px 0 80px; 
     position: relative;
     overflow: hidden;
 }
@@ -90,7 +87,6 @@ body {
     font-size: 3rem;
     font-weight: 700;
     margin-bottom: 1.5rem;
-    /* Hero animations are already in the HTML for immediate load effect */
     animation: fadeInUp 1s ease; 
 }
 
@@ -375,7 +371,7 @@ body {
 
 /* Class applied by JavaScript for on-scroll animation */
 .animate-on-scroll {
-    opacity: 0; /* Start hidden */
+    opacity: 0; 
     transform: translateY(30px);
     transition: opacity 0.8s ease, transform 0.8s ease;
 }
@@ -394,6 +390,29 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
+    /* FIX 1: Hero Top Spacing */
+    .hero {
+        /* This ensures the Hero section starts below the fixed navbar on mobile */
+        padding-top: 130px; 
+    }
+    
+    /* FIX 2: Mobile Navigation Layout */
+    .navbar .container {
+        /* Force the logo and toggler onto one line */
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+    
+    .navbar-brand {
+        /* Allow the brand to shrink, preventing the text/logo from wrapping */
+        max-width: 80%; 
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
     .hero h1 {
         font-size: 2rem;
     }
