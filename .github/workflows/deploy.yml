@@ -1,0 +1,35 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main  # Trigger workflow when pushing to main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Optional: Setup Node.js (if you later add build steps)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      # Optional: Minify CSS and JS
+      # Uncomment this section if you want automatic minification
+      # - name: Minify assets
+      #   run: |
+      #     npm install -g minify
+      #     minify style.css > style.min.css
+      #     minify script.js > script.min.js
+
+      # Deploy to GitHub Pages using peaceiris/actions-gh-pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./
