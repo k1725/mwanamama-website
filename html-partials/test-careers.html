@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Careers Loading</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .job-card {
+      border-radius: 10px;
+      padding: 20px;
+      background: #fff;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+      transition: .3s ease;
+    }
+    .job-card:hover { 
+      transform: translateY(-3px); 
+    }
+    .apply-btn { 
+      float: right; 
+    }
+    #console-output {
+      background: #000;
+      color: #0f0;
+      padding: 15px;
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-5">
+    <h1 class="mb-4">Careers Loading Test</h1>
+    
+    <div id="console-output"></div>
+
+    <section id="careers">
+      <h2 class="mb-4 text-center">Current Job Openings</h2>
+
+      <div id="careersList">
+        <div class="text-center py-4">
+          <div class="spinner-border"></div>
+          <p class="text-muted mt-2">Loading job openings...</p>
+        </div>
+      </div>
+
+      <div id="noJobs" class="alert alert-warning text-center d-none">
+        No open positions at the moment. Please check again later.
+      </div>
+
+      <button id="loadMoreCareers" class="btn btn-outline-primary" style="display: block; margin: 20px auto;">
+        Load More Jobs
+      </button>
+    </section>
+  </div>
+
+  <script>
+    // Custom console logger
+    const consoleOutput = document.getElementById('console-output');
+    function log(...args) {
+      const message = args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+      ).join(' ');
+      consoleOutput.innerHTML += message + '\n';
+      consoleOutput.scrollTop = consoleOutput.scrollHeight;
+      console.log(...args);
+    }
+
+    let careersOffset = 0;
+    const careersLimit = 6;
+
+    async function loadCareers(reset = false) {
+      log('🔍 loadCareers called with reset:', reset);
+      
+      const careersList = document.getElementById("careersList");
+      const noJobs = document.getElementById("noJobs");
+      const loadMoreBtn = document.getElementById("loadMoreCareers");
+
+      if (!careersList || !noJobs) {
+        log('❌ careersList or noJobs element not found!');
+        return;
+      }
+
+      if (reset) {
+        careersOffset = 0;
+        careersList.innerHTML = `
+          <div class="text-center py-4">
+            <div class="spinner-border"></div>
+            <p class="text-muted mt-2">Loading job openings...</p>
+          </div>`;
+      }
+
+      if (loadMoreBtn) {
+        loadMoreBtn.disabled = true;
+        loadMoreBtn.textContent = "Loading...";
+      }
+
+      // Test different API paths
+      const apiPaths = [
+        `/Mwanamama-Website/backend/api/careers.php?limit=${careersLimit}&offset=${careersOffset}`,
+        `backend/api/careers.php?limit=${careersLimit}&offset=${careersOffset}`,
+        `../backend/api/careers.php?limit=${careersLimit}&offset=${careersOffset}`,
+        `./backend/api/careers.php?limit=${careersLimit}&offset=${careersOffset}`,
+        `/backend/api/careers.php?limit=${careersLimit}&offset=${careersOffset}`
+      ];
+
+      let successfulPath = null;
+      let lastError = null;
+
+      for (const apiUrl of apiPaths) {
+        try {
+          log(`🌐 Trying: ${apiUrl}`);
+          const res = await fetch(apiUrl);
+          log(`📡 Status: ${res.status} - ${res.statusText}`);
+
+          if (!res.ok) {
+            log(`⚠️ Failed with status ${res.status}`);
+            continue;
+          }
+
+          const responseText = await res.text();
+          log(`📄 Response length: ${responseText.length} characters`);
+          log(`📄 First 200 chars: ${responseText.substring(0, 200)}`);
+
+          let data;
+          try {
+            data = JSON.parse(responseText);
+            log('✅ Valid JSON received:', data);
+            successfulPath = apiUrl;
+            
+            if (reset) {
+              careersList.innerHTML = "";
+            }
+
+            if (!data.success || !data.data || data.data.length === 0) {
+              log('📭 No jobs found or API returned success: false');
+              if (careersOffset === 0) {
+                noJobs.classList.remove("d-none");
+                careersList.innerHTML = "";
+              }
+              if (loadMoreBtn) {
+                loadMoreBtn.style.display = "none";
+              }
+              return;
+            }
+
+            log(`✅ Found ${data.data.length} jobs`);
+            noJobs.classList.add("d-none");
+
+            data.data.forEach((job, index) => {
+              log(`📝 Job ${index + 1}: ${job.title}`);
+              
+              const card = document.createElement("div");
+              card.className = "job-card";
+
+              card.innerHTML = `
+                <h4>${job.title || 'Untitled Position'}</h4>
+                <p><strong>Department:</strong> ${job.department || 'N/A'}</p>
+                <p><strong>Location:</strong> ${job.location || 'N/A'}</p>
+                <p><strong>Type:</strong> ${job.employment_type || 'N/A'}</p>
+                <a href="/Mwanamama-Website/html-partials/careers-details.php?id=${job.id}" class="btn btn-primary btn-sm apply-btn">
+                  Read More
+                </a>
+              `;
+
+              careersList.appendChild(card);
+            });
+
+            careersOffset += data.data.length;
+
+            if (loadMoreBtn) {
+              if (data.data.length < careersLimit) {
+                loadMoreBtn.style.display = "none";
+              } else {
+                loadMoreBtn.style.display = "block";
+                loadMoreBtn.disabled = false;
+                loadMoreBtn.textContent = "Load More Jobs";
+              }
+            }
+
+            log('✅ SUCCESS! Jobs loaded successfully');
+            log(`✅ Working API path: ${successfulPath}`);
+            return;
+
+          } catch (parseError) {
+            log(`❌ JSON Parse Error: ${parseError.message}`);
+            log(`Response was: ${responseText}`);
+            continue;
+          }
+
+        } catch (err) {
+          log(`❌ Fetch error for ${apiUrl}: ${err.message}`);
+          lastError = err;
+        }
+      }
+
+      // If we get here, all paths failed
+      log('❌ ALL API PATHS FAILED');
+      log('Tested paths:', apiPaths);
+      
+      if (careersOffset === 0) {
+        noJobs.classList.remove("d-none");
+        careersList.innerHTML = `
+          <div class="alert alert-danger">
+            <strong>Error:</strong> Could not connect to API. Check console for details.
+          </div>
+        `;
+      }
+      if (loadMoreBtn) {
+        loadMoreBtn.disabled = false;
+        loadMoreBtn.textContent = "Load More Jobs";
+      }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      log('🚀 Page loaded, starting test...');
+      loadCareers(true);
+
+      const loadMoreBtn = document.getElementById("loadMoreCareers");
+      if (loadMoreBtn) {
+        loadMoreBtn.addEventListener("click", () => {
+          log('🖱️ Load More clicked');
+          loadCareers(false);
+        });
+      }
+    });
+  </script>
+</body>
+</html>
